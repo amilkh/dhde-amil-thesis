@@ -108,6 +108,13 @@ def main():
     Xtr, Xte, ytr, yte = X[:split], X[split:], y[:split], y[split:]
     print(f"Split: train n = {split}, hold-out n = {N - split}\n")
 
+    # Split-rounding note: 397*0.8 = 317.6. The 318/79 split (round) is used here
+    # and by the benchmark module; the 317/80 split (truncate) gives OLS 0.683.
+    s2 = int(N * TRAIN_PCT)  # 317
+    o2 = sm.OLS(y[:s2], sm.add_constant(X[:s2])).fit()
+    r2_317 = r2_score(y[s2:], o2.predict(sm.add_constant(X[s2:], has_constant="add")))
+    print(f"OLS hold-out R2  (317/80 split) = {r2_317:.4f}   (README value 0.683)\n")
+
     rows = []
     op = sm.OLS(ytr, sm.add_constant(Xtr)).fit()
     r2o = r2_score(yte, op.predict(sm.add_constant(Xte, has_constant="add")))

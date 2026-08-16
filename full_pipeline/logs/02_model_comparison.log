@@ -6,7 +6,7 @@ Total camera days: 444
 Zero-count days (camera outage): 17
   Dates: 2024-12-30, 2025-01-22, 2025-05-02, 2025-05-17, 2025-06-13, 2025-06-24, 2025-08-06, 2025-08-16, 2025-08-26, 2025-08-30, 2025-09-10, 2025-09-26, 2025-09-27, 2025-09-28, 2025-10-03, 2025-10-10, 2025-11-12
 Usable camera days after removing zeros: 427
-Using JMA weather file: /home/amil/active/hokuriku-tourism-ai-governance/jma/jma_mikuni_hourly_8.csv
+Using JMA weather file: <repo>/jma/jma_mikuni_hourly_8.csv
 Weather daily rows: 461
 Google intent rows: 774
 Using Google intent column: 'directions'
