@@ -1,0 +1,97 @@
+
+================================================================================
+SECTION 1 – Data Loading & Cleaning
+================================================================================
+Total camera days: 444
+Zero-count days (camera outage): 17
+  Dates: 2024-12-30, 2025-01-22, 2025-05-02, 2025-05-17, 2025-06-13, 2025-06-24, 2025-08-06, 2025-08-16, 2025-08-26, 2025-08-30, 2025-09-10, 2025-09-26, 2025-09-27, 2025-09-28, 2025-10-03, 2025-10-10, 2025-11-12
+Usable camera days after removing zeros: 427
+Using JMA weather file: /home/amil/active/hokuriku-tourism-ai-governance/jma/jma_mikuni_hourly_8.csv
+Weather daily rows: 461
+Google intent rows: 774
+Using Google intent column: 'directions'
+Merged daily rows (camera ∩ weather ∩ google): 427
+Date range: 2024-12-20 → 2026-03-10
+
+Outlier detection (IQR): Q1=5045  Q3=11376  IQR=6332  fences=[-4452, 20874]
+  Outlier days: 5
+
+Augmented Dickey-Fuller tests:
+  count: ADF=-2.916  p=0.0435  → STATIONARY  (lag=14)
+  directions: ADF=-2.480  p=0.1204  → NON-STATIONARY  (lag=15)
+Loaded 97719 survey responses across all years
+Initializing Phase 1 Privacy Layer...
+Scrubbing PII (Names, Emails, Phones) from free-text fields.
+Privacy sanitization applied (best-effort redaction) before downstream analysis.
+Raw Fukui survey loaded: 90350 rows
+
+================================================================================
+SECTION 2 – Feature Engineering
+================================================================================
+Weekend/Holiday days: 141 / 427
+Weather severity distribution:
+weather_severity
+0    193
+1    139
+2     90
+3      5
+
+Day-of-week average counts:
+  Mon: 8486.3
+  Tue: 6847.4
+  Wed: 6192.4
+  Thu: 6770.7
+  Fri: 7220.1
+  Sat: 11853.2
+  Sun: 12127.4
+
+Correlation with 'count':
+  directions                           r = +0.781
+  directions_lag2                      r = +0.437
+  directions_roll7                     r = +0.570
+  precip                               r = -0.180
+  temp                                 r = +0.437
+  sun                                  r = +0.381
+  wind                                 r = -0.234
+  is_weekend_or_holiday                r = +0.548
+  weather_severity                     r = -0.297
+  dow_mean_count                       r = +0.503
+################################################################################
+# MODEL COMPARISON — OLS vs TREE MODELS ON THE CHRONOLOGICAL HOLD-OUT
+################################################################################
+N = 397 effective days | chronological split: train n=318  hold-out n=79
+Features (16): ['directions', 'directions_lag1', 'directions_lag2', 'directions_lag3', 'directions_roll7', 'precip', 'temp', 'sun', 'wind', 'precip_lag1', 'is_weekend_or_holiday', 'weather_severity', 'dow_mean_count', 'weekend_x_severity', 'weekend_x_intent', 'month']
+
+[OLS]                hold-out R² = 0.6565  MAE = 1802.4
+[RF baseline]        hold-out R² = 0.5120  MAE = 1893.2
+[RF best-of-search]  hold-out R² = 0.5182  MAE = 1857.5  (max_depth=10, min_samples_leaf=3, max_features=0.7)
+[XGBoost]            hold-out R² = 0.5695  MAE = 1796.6
+[LightGBM]           hold-out R² = 0.5473  MAE = 1952.3
+
+==============================================================================
+RESULTS — chronological hold-out (318 train / 79 hold-out), sorted by R²
+==============================================================================
+Family    Model                                      Hold-out R²       MAE
+------------------------------------------------------------------------------
+OLS       OLS (linear, reference)                         0.6565    1802.4
+XGBoost   XGBoost (gradient-boosted trees)                0.5695    1796.6
+LightGBM  LightGBM (gradient-boosted trees)               0.5473    1952.3
+RF        RF best config (from 120-config search)         0.5182    1857.5
+RF        RF baseline (paper config)                      0.5120    1893.2
+------------------------------------------------------------------------------
+OLS hold-out R²         = 0.6565
+Best tree-based model   = 0.5695
+=> OLS OUTPERFORMS every tree-based model on the chronological hold-out.
+
+--- Thesis-quoted reference values (Ch. 5) ---
+  OLS hold-out R²             = 0.657
+  baseline RF hold-out R²     = 0.512
+  best RF (120-config search) = 0.522
+  XGBoost best hold-out R²    = 0.597
+  LightGBM hold-out R²        = 0.589
+  Conclusion: OLS outperforms all 27 evaluated model variants.
+
+Note: the full 120-configuration randomized RF search reported in the
+thesis is cited above; this script evaluates its winning configuration
+directly (deterministic) alongside XGBoost and LightGBM. Boosting models
+beat the baseline RF but none reach OLS on the chronological hold-out.

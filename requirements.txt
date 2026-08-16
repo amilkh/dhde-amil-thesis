@@ -1,0 +1,7 @@
+numpy
+pandas
+statsmodels
+scikit-learn
+# optional (for the XGBoost / LightGBM comparison rows):
+xgboost
+lightgbm
